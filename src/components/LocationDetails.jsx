@@ -1,16 +1,19 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { X, Navigation } from 'lucide-react';
+import { X, Navigation, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMapContext } from '@/contexts/MapContext';
+import { useAudio } from '@/contexts/AudioContext';
 import { useToast } from '@/components/ui/use-toast';
 
 const LocationDetails = ({ location, onClose, currentLocation }) => {
   const { setStartPoint, setDestination } = useMapContext();
+  const { speakBuildingDescription, speakLocationSelection } = useAudio();
   const { toast } = useToast();
 
   const handleSetStart = () => {
     setStartPoint(location);
+    speakLocationSelection(location, 'start'); // Audio feedback
     toast({
       title: 'Start Point Set',
       description: `${location.name} set as starting point.`,
@@ -20,6 +23,7 @@ const LocationDetails = ({ location, onClose, currentLocation }) => {
 
   const handleSetEnd = () => {
     setDestination(location);
+    speakLocationSelection(location, 'destination'); // Audio feedback
     toast({
       title: 'Destination Set',
       description: `${location.name} set as destination.`,
@@ -36,11 +40,16 @@ const LocationDetails = ({ location, onClose, currentLocation }) => {
     };
     setStartPoint(start);
     setDestination(location);
+    speakLocationSelection(location, 'destination'); // Audio feedback
     toast({
       title: 'Route Planned',
       description: `Navigating from ${start.name} to ${location.name}`,
       duration: 3000,
     });
+  };
+
+  const handleSpeakDescription = () => {
+    speakBuildingDescription(location);
   };
 
   if (!location) {
@@ -57,14 +66,25 @@ const LocationDetails = ({ location, onClose, currentLocation }) => {
     >
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-bold text-lg text-gray-800">{location.name}</h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-gray-600 hover:bg-gray-100 p-1 h-auto"
-          onClick={onClose}
-        >
-          <X className="h-5 w-5" />
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-purple-600 hover:bg-purple-50 p-1 h-auto"
+            onClick={handleSpeakDescription}
+            title="Listen to building description"
+          >
+            <Volume2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-600 hover:bg-gray-100 p-1 h-auto"
+            onClick={onClose}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
       <img
         src={location.image}

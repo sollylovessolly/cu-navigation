@@ -11,7 +11,6 @@ const locationData = [
     openingHours: "6:00 AM - 9:00 PM",
     capacity: "3000 people",
     facilities: ["Air Conditioning", "Sound System", "Projectors"],
-    image: "https://via.placeholder.com/300x150?text=University+Chapel"
   },
   {
     id: 2,

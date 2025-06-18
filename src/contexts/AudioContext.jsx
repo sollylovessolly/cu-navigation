@@ -1,58 +1,61 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import audioService from '@/services/audioService';
 
 const AudioContext = createContext();
 
-export const useAudioContext = () => useContext(AudioContext);
+export const useAudio = () => {
+  const context = useContext(AudioContext);
+  if (!context) {
+    throw new Error('useAudio must be used within an AudioProvider');
+  }
+  return context;
+};
 
 export const AudioProvider = ({ children }) => {
-  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
-  const { toast } = useToast();
-  const [speechSynthesis, setSpeechSynthesis] = useState(null);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [isSupported, setIsSupported] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      setSpeechSynthesis(window.speechSynthesis);
-    } else {
-      console.warn("Speech Synthesis API is not supported in this browser.");
-    }
+    setIsSupported(audioService.isAvailable());
   }, []);
 
-  const toggleAudio = useCallback(() => {
-    setIsAudioEnabled(prev => {
-      const newState = !prev;
-      if (newState) {
-        toast({ title: "Audio Narration Enabled", description: "Location details will be spoken." });
-        // Speak a welcome message or confirmation
-        if (speechSynthesis) {
-          const utterance = new SpeechSynthesisUtterance("Audio narration enabled.");
-          speechSynthesis.speak(utterance);
-        }
-      } else {
-        toast({ title: "Audio Narration Disabled" });
-        if (speechSynthesis) {
-          speechSynthesis.cancel(); // Stop any ongoing speech
-        }
-      }
-      return newState;
-    });
-  }, [toast, speechSynthesis]);
+  const toggleAudio = () => {
+    const newState = audioService.toggle();
+    setIsAudioEnabled(newState);
+    return newState;
+  };
 
-  const speak = useCallback((text) => {
-    if (isAudioEnabled && speechSynthesis && text) {
-      speechSynthesis.cancel(); // Cancel any previous speech
-      const utterance = new SpeechSynthesisUtterance(text);
-      // Optionally configure voice, rate, pitch
-      // const voices = speechSynthesis.getVoices();
-      // utterance.voice = voices[0]; // Example: set a specific voice
-      utterance.rate = 0.9; // Adjust speech rate (0.1 to 10)
-      utterance.pitch = 1; // Adjust pitch (0 to 2)
-      speechSynthesis.speak(utterance);
-    }
-  }, [isAudioEnabled, speechSynthesis]);
+  const speakText = (text, options) => {
+    return audioService.speak(text, options);
+  };
+
+  const speakRouteDirections = (startPoint, destination, route) => {
+    audioService.speakRouteDirections(startPoint, destination, route);
+  };
+
+  const speakBuildingDescription = (location) => {
+    audioService.speakBuildingDescription(location);
+  };
+
+  const speakLocationSelection = (location, selectionType) => {
+    audioService.speakLocationSelection(location, selectionType);
+  };
+
+  const stopAudio = () => {
+    audioService.stop();
+  };
 
   return (
-    <AudioContext.Provider value={{ isAudioEnabled, toggleAudio, speak }}>
+    <AudioContext.Provider value={{
+      isAudioEnabled,
+      isSupported,
+      toggleAudio,
+      speakText,
+      speakRouteDirections,
+      speakBuildingDescription,
+      speakLocationSelection,
+      stopAudio
+    }}>
       {children}
     </AudioContext.Provider>
   );

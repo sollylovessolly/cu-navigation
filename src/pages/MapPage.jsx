@@ -6,7 +6,9 @@ import { useToast } from '@/components/ui/use-toast';
 import MapView from '@/components/MapView';
 import SearchPanel from '@/components/SearchPanel';
 import LocationDetails from '@/components/LocationDetails';
+import AudioControls from '@/components/AudioControls';
 import { useMapContext } from '@/contexts/MapContext';
+import { useAudio } from '@/contexts/AudioContext';
 
 const MapPage = () => {
   const { toast } = useToast();
@@ -20,6 +22,7 @@ const MapPage = () => {
     route,
     setRoute,
   } = useMapContext();
+  const { speakRouteDirections, speakLocationSelection } = useAudio();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
 
@@ -28,6 +31,7 @@ const MapPage = () => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const coords = [position.coords.latitude, position.coords.longitude];
+          // Calculate distance from campus center (approximate)
           const distance = Math.sqrt(
             Math.pow(coords[0] - 6.6717, 2) + Math.pow(coords[1] - 3.1583, 2)
           ) * 111; // Approx km
@@ -101,6 +105,7 @@ const MapPage = () => {
   const handleUseCurrentLocation = () => {
     if (currentLocation) {
       setStartPoint(currentLocation);
+      speakLocationSelection(currentLocation, 'start'); // Audio feedback
       toast({
         title: 'Start Point Set',
         description: `Using ${currentLocation.name} as start point.`,
@@ -134,6 +139,7 @@ const MapPage = () => {
         description: `Navigating from ${startPoint.name} to ${destination.name}`,
         duration: 3000,
       });
+      // Audio feedback will be triggered when route is calculated
     } else {
       toast({
         title: 'Incomplete Selection',
@@ -143,6 +149,13 @@ const MapPage = () => {
       });
     }
   };
+
+  // Audio feedback when route is available
+  useEffect(() => {
+    if (route && startPoint && destination) {
+      speakRouteDirections(startPoint, destination, route);
+    }
+  }, [route, startPoint, destination, speakRouteDirections]);
 
   return (
     <div className="relative h-full w-full">
@@ -196,18 +209,8 @@ const MapPage = () => {
           <RefreshCw className="h-4 w-4 mr-2" />
           Retry Location
         </Button>
+        <AudioControls />
       </div>
-      <motion.div
-        className="absolute bottom-16 right-4 z-[1000]"
-        whileHover={{ scale: 1.1 }}
-      >
-        <Button
-          className="bg-purple-700 hover:bg-purple-800 rounded-full w-12 h-12"
-          onClick={() => setIsSearchOpen(true)}
-        >
-          <Navigation className="h-6 w-6" />
-        </Button>
-      </motion.div>
       {(startPoint || destination) && (
         <div className="absolute top-20 right-4 z-[1000] bg-white p-4 rounded-lg shadow-lg w-80">
           <h3 className="font-bold text-lg text-gray-800">Route Planner</h3>

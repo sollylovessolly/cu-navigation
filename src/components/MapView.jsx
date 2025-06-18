@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Map, MapPin } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useMapContext } from '@/contexts/MapContext';
+import { useAudio } from '@/contexts/AudioContext';
 
 const COVENANT_CENTER = [6.6717, 3.1583];
 const ZOOM_LEVEL = 16;
@@ -69,6 +70,7 @@ const MapController = ({ selectedLocation, startPoint, destination, setRoute }) 
 const MapView = ({ onSelectLocation, currentLocation }) => {
   const { toast } = useToast();
   const { locations, selectedLocation, setSelectedLocation, startPoint, destination, setRoute } = useMapContext();
+  const { speakBuildingDescription } = useAudio();
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   useEffect(() => {
@@ -91,6 +93,17 @@ const MapView = ({ onSelectLocation, currentLocation }) => {
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
   });
+
+  const handleLocationClick = (location) => {
+    setSelectedLocation(location);
+    if (onSelectLocation) {
+      onSelectLocation(location);
+    }
+    // Trigger audio description when clicking on building
+    setTimeout(() => {
+      speakBuildingDescription(location);
+    }, 500); // Small delay to let the popup appear first
+  };
 
   return (
     <div className="map-container h-full w-full">
@@ -142,12 +155,7 @@ const MapView = ({ onSelectLocation, currentLocation }) => {
             key={location.id}
             position={location.coordinates}
             eventHandlers={{
-              click: () => {
-                setSelectedLocation(location);
-                if (onSelectLocation) {
-                  onSelectLocation(location);
-                }
-              },
+              click: () => handleLocationClick(location),
             }}
           >
             <Popup>
